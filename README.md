@@ -41,7 +41,6 @@ Backend:
 - google-auth
 - google-auth-oauthlib
 - google-api-python-client
-- python-dotenv
 - bark (for voice synthesis)
 - torch
 - soundfile
