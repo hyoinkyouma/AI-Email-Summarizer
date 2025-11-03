@@ -30,6 +30,7 @@ email-summarizer/
 - Python 3.11+
 - Gmail API credentials
 - CUDA-capable GPU (optional, for faster voice synthesis)
+- Ollama
 
 ## Dependencies
 
