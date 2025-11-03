@@ -1,0 +1,5 @@
+/backend/token.pickle
+/backend/credentials.json
+/backend/.env
+/backend/__pycache__/
+/env
