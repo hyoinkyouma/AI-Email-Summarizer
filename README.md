@@ -111,7 +111,3 @@ streamlit run app.py
 ## Note
 
 Make sure to keep your `credentials.json` and `token.pickle` files secure and never commit them to version control.
-
-## License
-
-[Add your license information here]
