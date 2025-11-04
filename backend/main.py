@@ -2,19 +2,12 @@ from backend.gmail_client import fetch_unread_snippets
 from backend.summarizer import summarize_email
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from bark import generate_audio, SAMPLE_RATE, preload_models
-import torch
-import numpy as np
 import io
 import soundfile as sf
 from pydantic import BaseModel
-import re
+import edge_tts
 
 app = FastAPI()
-
-preload_models()
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 class SynthesisRequest(BaseModel):
     text: str
@@ -27,31 +20,24 @@ def daily_digest():
     summary = summarize_email(combined)
     return {"summary": summary, "emails": emails}
 
+@app.get("/heart-beat")
+def heart_beat():
+    return {"status":"ok"}
+
 @app.post("/synthesize")
 def synthesize_text(req: SynthesisRequest):
-    text = req.text.strip()
-    raw_parts = re.split(r'(?<=[.!?])\s+|\n+', text)
-    sentences = [s.strip() for s in raw_parts if s.strip()]
-    print(sentences)
-    audio_chunks = []
-    if not sentences:
+    if not req.text:
         raise HTTPException(status_code=400, detail="Text cannot be empty.")
-    try:
-        with torch.cuda.amp.autocast(enabled=(DEVICE == "cuda")):
-            for i, sentence in enumerate(sentences):
-                audio_array = generate_audio(sentence, history_prompt=req.history_prompt or None)
-                audio_chunks.append(audio_array)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Generation failed: {e}")
-
+    text = req.text.strip()
+    voice = req.history_prompt if req.history_prompt else "en-PH-RosaNeural"
+    communicate = edge_tts.Communicate(text, voice)
+    OUTPUT_FILE = "output.wav"
+    with open(OUTPUT_FILE, "wb") as file:
+        for chunk in communicate.stream_sync():
+            if chunk["type"] == "audio":
+                file.write(chunk["data"])
+    data, samplerate = sf.read(OUTPUT_FILE)
     buf = io.BytesIO()
-    audio_np = np.concatenate(audio_chunks)
-
-    # Convert to float32 if needed
-    if audio_np.dtype == np.float16:
-        audio_np = audio_np.astype(np.float32)
-
-    sf.write(buf, audio_np, SAMPLE_RATE, format="WAV")
+    sf.write(buf, data, samplerate, format="WAV")
     buf.seek(0)
-    
     return StreamingResponse(buf, media_type="audio/wav")

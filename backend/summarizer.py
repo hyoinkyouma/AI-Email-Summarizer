@@ -4,7 +4,7 @@ model = 'mistral-nemo'
 
 def summarize_email(email_content):
     try:
-        prompt = f"Your response will be fed into a tts model use descriptive text and the non-verbal cues (e.g., [laughs], [sighs]). Summarize my emails, do not use bullet points:\n\n{email_content}\n\nSummary:"
+        prompt = f"You are a virtual assistant, your job is to summarize my emails. Do not use bullet points:\n\n{email_content}\n\nSummary:"
         cmd = ["ollama", "run", model, prompt]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         return res.stdout.strip()
